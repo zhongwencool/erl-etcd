@@ -43,6 +43,7 @@ handle_call({peer_down}, _From, State) ->
     NewPeer =:= [] andalso erlang:send_after(2000, self(), peer_down),
     {reply, random_peers(NewPeer), State#state{peer = NewPeer}};
 
+
 handle_call({peer}, _From, State = #state{peer = Peer}) ->
     {reply, random_peers(Peer), State};
 
