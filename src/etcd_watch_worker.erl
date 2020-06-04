@@ -119,7 +119,7 @@ handle_info({hackney_response, Ref, Error},
     State = #state{hackney_ref = Ref, time = Time}) ->
     logger:error("watch Error ~p ~p", [Ref, Error, Time]),
     rewatch_after(400),
-    {noreply, State#{time = 0}};
+    {noreply, State#state{time = 0}};
 
 handle_info(stop, State) ->
     {stop, normal, State};

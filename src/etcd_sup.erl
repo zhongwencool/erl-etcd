@@ -31,6 +31,7 @@ stop_child(Pid) ->
 init([]) ->
     {ok, EtcdPeers}= application:get_env(etcd, addr), 
     {ok, {{one_for_one, 10, 10}, [
-        ?CHILD(etcd_worker, worker, [EtcdPeers])
+        ?CHILD(etcd_worker, worker, [EtcdPeers]),
+        ?CHILD(etcd_watch_sup, supervisor, [])
     ]}}.
 
