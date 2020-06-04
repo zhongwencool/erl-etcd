@@ -10,16 +10,17 @@ start_watch(Ref, Opts, Callback) ->
 
 do_watch(Url, Opts, Callback) ->
     %% there is some chance that a peer is down so you will have to retrieve the url from etcd server
-    V2Url = case Url of
-        "" ->
-            Peer = etcd:get_current_peer(),
-            Peer ++ "/v2";
-        _ -> Url
-    end,
-
+    V2Url =
+        case Url of
+            undefined ->
+                {ok, Peer} = etcd:get_current_peer(),
+                Peer ++ "/v2";
+            _ -> Url
+        end,
+    
     OptStr = etcd_worker:generate_read_str_from_opts(Opts#etcd_read_opts{wait = true}),
-
-    try ibrowse:send_req(V2Url ++ "/keys" ++ OptStr, [], get, [], [], 60000) of
+    
+    try hackney:request(get, V2Url ++ "/keys" ++ OptStr, [], [], [{recv_timeout, 60000}, {pool, etcd}, with_body]) of
         {ok, ReturnCode, _Headers, Body} ->
             case ReturnCode of
                 "200"->
@@ -49,8 +50,9 @@ do_watch(Url, Opts, Callback) ->
                 _ ->
                     do_watch("", Opts, Callback)
             end;
-        {error,{conn_failed,{error,econnrefused}}} ->
-            etcd_worker ! peer_down,
+
+        {error, econnrefused} ->
+            etcd_worker ! {peer_down},
             do_watch("", Opts, Callback);
         X ->
             do_watch(V2Url, Opts, Callback)
